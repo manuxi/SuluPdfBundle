@@ -1,0 +1,135 @@
+{#
+    Layout of the PDF (Manuxi\SuluPdfBundle\Service\PdfRenderer). Override it in your project with
+    templates/bundles/SuluPdfBundle/document.html.twig.
+
+    dompdf only knows CSS 2.1 (no flexbox, grid, custom properties, calc()), so this stylesheet is written for it on
+    purpose and the page is reduced to plain content first - the site's own CSS never reaches this document.
+    The logo, the rule at the top and the footer with the page count are drawn per page by the renderer, not here.
+
+    Context: doc (title, overline, subtitle, badges, meta, lead, heroSrc, heroCaption, heroWidth, heroHeight, body),
+             style (font, primary, primaryDark, primaryTint, text, muted), url, printed, modified, showOnlineLink,
+             qrCode (SVG data URI), company (array or null), locale.
+#}
+<!doctype html>
+<html lang="{{ locale }}">
+<head>
+    <meta charset="utf-8">
+    <title>{{ doc.title }}</title>
+    <style>
+        @page { margin: 30mm 18mm 24mm 18mm; }
+
+        body { font-family: "{{ style.font }}", sans-serif; font-size: 10pt; line-height: 1.6; color: {{ style.text }}; }
+
+        .overline { font-size: 8.5pt; font-weight: bold; letter-spacing: 1.5pt; text-transform: uppercase; color: {{ style.primary }}; margin: 0 0 6pt 0; }
+        h1 { font-size: 26pt; line-height: 1.15; font-weight: bold; color: {{ style.text }}; margin: 0 0 8pt 0; }
+        .subtitle { font-size: 14pt; line-height: 1.3; color: {{ style.muted }}; margin: 0 0 12pt 0; }
+        .badges { margin: 0 0 10pt 0; }
+        .badge { display: inline-block; font-size: 7.5pt; font-weight: bold; letter-spacing: 0.5pt; text-transform: uppercase; color: #ffffff; background: {{ style.primary }}; padding: 2pt 7pt; margin-right: 4pt; }
+        .meta { font-size: 8.5pt; color: {{ style.muted }}; margin: 0 0 18pt 0; }
+
+        table.hero { width: 100%; margin: 0 0 18pt 0; border-collapse: collapse; }
+        table.hero td { padding: 0; border: 0; text-align: center; }
+        table.hero img { width: 100%; }
+        table.hero td.caption { font-size: 8pt; color: {{ style.muted }}; padding-top: 4pt; }
+
+        .lead { font-size: 12.5pt; line-height: 1.55; color: {{ style.text }}; border-left: 3pt solid {{ style.primary }}; padding-left: 12pt; margin: 0 0 18pt 0; }
+
+        .content h2, .content h3, .content h4 { color: {{ style.text }}; font-weight: bold; page-break-after: avoid; }
+        .content h2 { font-size: 17pt; line-height: 1.25; margin: 22pt 0 8pt 0; padding-bottom: 4pt; border-bottom: 0.75pt solid #d8d8d8; }
+        .content h3 { font-size: 13pt; margin: 16pt 0 6pt 0; }
+        .content h4 { font-size: 11pt; margin: 12pt 0 4pt 0; }
+        .content .chapter-number { page-break-after: avoid; font-size: 8pt; font-weight: bold; letter-spacing: 1.2pt; text-transform: uppercase; color: {{ style.primary }}; margin: 18pt 0 0 0; }
+        .content .chapter-title { margin-top: 2pt; }
+
+        .content p { margin: 0 0 8pt 0; }
+        .content ul, .content ol { margin: 0 0 8pt 0; padding-left: 18pt; }
+        .content li { margin-bottom: 3pt; }
+        .content ul.nolist { list-style: none; padding-left: 0; }
+        .content li.nolist { list-style: none; margin: 0; }
+        .content a { color: {{ style.primaryDark }}; text-decoration: underline; }
+        .content strong, .content b { font-weight: bold; }
+        .content blockquote { margin: 12pt 0; padding: 4pt 0 4pt 14pt; border-left: 3pt solid {{ style.primary }}; font-style: italic; color: #444444; }
+        .content hr { border: 0; border-top: 0.75pt solid #d8d8d8; margin: 14pt 0; }
+
+        .content img { display: block; max-width: 100%; height: auto; }
+        .content table.fig { width: 385pt; margin: 8pt auto 12pt auto; border-collapse: collapse; }
+        .content table.fig td { padding: 0; border: 0; }
+        .content table.fig img { width: 385pt; }
+        .content table.gallery { width: 100%; margin: 8pt 0 12pt 0; border-collapse: separate; border-spacing: 6pt; }
+        .content table.gallery td { width: 50%; padding: 0; border: 0; vertical-align: top; }
+        .content table.gallery img { width: 100%; }
+        .content .gallery-caption { font-size: 8pt; color: {{ style.muted }}; text-align: center; padding-top: 3pt; }
+        .content td.fig-caption { font-size: 8pt; color: {{ style.muted }}; text-align: center; padding-top: 4pt; }
+        .content figure { margin: 12pt 0; }
+        .content figcaption p { margin: 0; }
+        .content figcaption, .content .text-muted, .content .text-small { font-size: 8pt; color: {{ style.muted }}; }
+        .content figcaption { margin-top: 4pt; text-align: left; }
+        .content figcaption a { color: {{ style.muted }}; text-decoration: none; }
+
+        .content table { width: 100%; border-collapse: collapse; margin: 8pt 0 12pt 0; font-size: 9pt; }
+        .content th { text-align: left; background: {{ style.primaryTint }}; border-bottom: 1.5pt solid {{ style.primary }}; padding: 5pt 6pt; }
+        .content td { border-bottom: 0.75pt solid #e0e0e0; padding: 5pt 6pt; vertical-align: top; }
+
+        .content .article-panel { margin: 16pt 0 0 0; padding: 8pt 12pt; background: #f4f4f4; border-left: 3pt solid {{ style.primary }}; page-break-inside: avoid; }
+        .content .article-author__label { display: block; font-size: 7.5pt; letter-spacing: 1pt; text-transform: uppercase; color: {{ style.muted }}; }
+        .content .article-author__name { font-size: 11pt; }
+        .content .article-panel__title { font-size: 12pt; margin: 0 0 6pt 0; border: 0; padding: 0; }
+
+        .content pre, .content code { font-family: "DejaVu Sans Mono", monospace; font-size: 8pt; }
+        .content pre { background: #f4f4f4; border-left: 3pt solid {{ style.primary }}; padding: 8pt 10pt; margin: 8pt 0 12pt 0; white-space: pre-wrap; page-break-inside: avoid; }
+
+        .content .article-callout { background: {{ style.primaryTint }}; border-left: 3pt solid {{ style.primary }}; padding: 8pt 12pt; margin: 10pt 0 12pt 0; page-break-inside: avoid; }
+        .content .article-callout p:last-child { margin-bottom: 0; }
+
+        table.online { width: 100%; margin: 18pt 0 0 0; border-collapse: collapse; border-top: 2pt solid {{ style.primary }}; page-break-inside: avoid; }
+        table.online td { padding: 10pt 0 0 0; border: 0; vertical-align: middle; }
+        td.online-qr { width: 68pt; }
+        .online-title { font-size: 11pt; font-weight: bold; margin-bottom: 2pt; }
+        .online-url { font-size: 8.5pt; color: {{ style.primaryDark }}; word-wrap: break-word; }
+        .online-company { font-size: 8.5pt; color: #555555; margin-top: 8pt; }
+        .online-date { font-size: 8.5pt; color: {{ style.muted }}; margin-top: 4pt; }
+    </style>
+</head>
+<body>
+    {% if doc.overline %}<div class="overline">{{ doc.overline }}</div>{% endif %}
+    <h1>{{ doc.title }}</h1>
+    {% if doc.subtitle %}<div class="subtitle">{{ doc.subtitle }}</div>{% endif %}
+    {% if doc.badges %}<div class="badges">{% for badge in doc.badges %}<span class="badge">{{ badge }}</span>{% endfor %}</div>{% endif %}
+    {% if doc.meta %}<div class="meta">{{ doc.meta|join(' · ') }}</div>{% endif %}
+
+    {% if doc.heroSrc %}
+        <table class="hero">
+            <tr><td><img src="{{ doc.heroSrc }}" alt="{{ doc.heroCaption }}"{% if doc.heroWidth %} style="width: {{ doc.heroWidth }}pt; height: {{ doc.heroHeight }}pt;"{% endif %}></td></tr>
+            {% if doc.heroCaption %}<tr><td class="caption">{{ doc.heroCaption }}</td></tr>{% endif %}
+        </table>
+    {% endif %}
+
+    {% if doc.lead %}<div class="lead">{{ doc.lead }}</div>{% endif %}
+
+    <div class="content">{{ doc.body|raw }}</div>
+
+    {% if qrCode or modified or company %}
+        <table class="online">
+            <tr>
+                {% if qrCode %}<td class="online-qr"><img src="{{ qrCode }}" alt="QR" style="width: 54pt; height: 54pt;"></td>{% endif %}
+                <td class="online-text">
+                    {% if showOnlineLink %}
+                        <div class="online-title">{{ 'pdf.online'|trans({}, 'sulu_pdf', locale) }}</div>
+                        <div>{{ 'pdf.online_hint'|trans({}, 'sulu_pdf', locale) }}</div>
+                        <div class="online-url">{{ url }}</div>
+                    {% endif %}
+                    {% if modified %}<div class="online-date">{{ 'pdf.modified'|trans({}, 'sulu_pdf', locale) }}: {{ modified }}</div>{% endif %}
+                    {% if company %}
+                        <div class="online-company">
+                            <strong>{{ company.name ?? '' }}</strong><br>
+                            {% if company.street ?? '' %}{{ company.street }}, {% endif %}{{ company.zip ?? '' }} {{ company.city ?? '' }}<br>
+                            {% if company.phone ?? '' %}{{ 'pdf.phone'|trans({}, 'sulu_pdf', locale) }}: {{ company.phone }}{% endif %}{% if (company.phone ?? '') and (company.email ?? '') %} &middot; {% endif %}{% if company.email ?? '' %}{{ company.email }}{% endif %}
+                            {% if company.url ?? '' %}<br>{{ company.url }}{% endif %}
+                        </div>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    {% endif %}
+</body>
+</html>

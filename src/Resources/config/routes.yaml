@@ -1,0 +1,7 @@
+sulu_pdf_download:
+    path: /pdf/{resourceKey}/{id}
+    controller: Manuxi\SuluPdfBundle\Controller\PdfController
+    methods: [GET]
+    requirements:
+        resourceKey: '[a-z0-9_-]+'
+        id: '[A-Za-z0-9_-]+'

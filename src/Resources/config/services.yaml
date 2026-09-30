@@ -1,0 +1,41 @@
+services:
+    _defaults:
+        autowire: false
+        autoconfigure: false
+        public: false
+
+    Manuxi\SuluPdfBundle\Service\NullCompanyDataProvider: ~
+
+    Manuxi\SuluPdfBundle\Service\ContentExtractor: ~
+
+    Manuxi\SuluPdfBundle\Profile\ProfileRegistry:
+        arguments:
+            - !tagged_iterator sulu_pdf.profile
+            - '%sulu_pdf.rule_overrides%'
+
+    Manuxi\SuluPdfBundle\Service\PdfRenderer:
+        arguments:
+            - '@http_kernel'
+            - '@Manuxi\SuluPdfBundle\Service\ContentExtractor'
+            - '@Manuxi\SuluPdfBundle\Profile\ProfileRegistry'
+            - '@Sulu\Route\Domain\Repository\RouteRepositoryInterface'
+            - '@twig'
+            - '@translator'
+            - '@Manuxi\SuluPdfBundle\Service\CompanyDataProviderInterface'
+            - '%sulu_pdf.config%'
+            - '%kernel.project_dir%'
+            - '%kernel.cache_dir%'
+
+    Manuxi\SuluPdfBundle\Controller\PdfController:
+        public: true
+        arguments:
+            - '@Manuxi\SuluPdfBundle\Service\PdfRenderer'
+        tags:
+            - { name: 'controller.service_arguments' }
+            - { name: 'sulu.context', context: 'website' }
+
+    Manuxi\SuluPdfBundle\Twig\PdfExtension:
+        arguments:
+            - '@router'
+        tags:
+            - { name: 'twig.extension' }
