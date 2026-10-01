@@ -97,7 +97,9 @@ Ein Profil sagt für eine Art von Inhalt, ob es ein PDF gibt, mit welchen Option
 
 ### Artikel (automatisch)
 
-Mit [manuxi/sulu-article-configuration-bundle](https://github.com/manuxi/SuluArticleConfigurationBundle) (1.4+) wird das Profil `articles` automatisch registriert. Es liest die Schalter des Artikels selbst (Tab "Konfiguration": PDF-Download, Bildunterschriften, Autorenkasten, Datum der letzten Änderung, Link/QR-Code, Firmendaten). Die Standard-Regeln passen zu den Artikel-Templates des Referenz-Themes dieses Bundles (`.article-main`, `.article-header`, ...), andere Themes überschreiben sie wie oben gezeigt.
+**Empfohlen:** die Schalter im Reiter Auszug (`excerpt.articles: true`, siehe unten). Die Standard-Regeln passen zu den Artikel-Templates des Referenz-Themes (`.article-main`, `.article-header`, ...), andere Themes überschreiben sie wie oben gezeigt.
+
+*Altlast:* Mit [manuxi/sulu-article-configuration-bundle](https://github.com/manuxi/SuluArticleConfigurationBundle) **1.4.x** (und ohne `excerpt.articles`) liest das Profil `articles` die eigenen Schalter dieses Bundles (Tab "Konfiguration"). Version 2.0 des Article-Configuration-Bundles hat diese Felder nicht mehr, mit 2.x also `excerpt.articles` verwenden.
 
 ### Schalter im Reiter Auszug (Seiten, Artikel, Events)
 

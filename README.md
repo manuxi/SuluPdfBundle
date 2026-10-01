@@ -97,7 +97,9 @@ A profile says for one kind of content whether a PDF exists, with which options,
 
 ### Articles (automatic)
 
-With [manuxi/sulu-article-configuration-bundle](https://github.com/manuxi/SuluArticleConfigurationBundle) (1.4+) the profile `articles` is registered automatically. It reads the article's own switches (tab "Configuration": PDF download, image captions, author box, last-modified date, link/QR code, company data). Its default rules match the article templates of that bundle's reference theme (`.article-main`, `.article-header`, ...), other themes override them as shown above.
+**Recommended:** the switches in the excerpt tab (`excerpt.articles: true`, see below). Their default rules match the article templates of the reference theme (`.article-main`, `.article-header`, ...), other themes override them as shown above.
+
+*Legacy:* with [manuxi/sulu-article-configuration-bundle](https://github.com/manuxi/SuluArticleConfigurationBundle) **1.4.x** (and without `excerpt.articles`) the profile `articles` reads that bundle's own switches (tab "Configuration"). Version 2.0 of the article configuration bundle no longer has these fields, so with 2.x use `excerpt.articles`.
 
 ### Switch in the excerpt tab (pages, articles, events)
 
