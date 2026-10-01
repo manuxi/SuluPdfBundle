@@ -6,7 +6,7 @@
     <key>sulu_pdf_excerpt_pages</key>
 
     <!-- merged into the excerpt tab of pages (Sulu's own hook for extra excerpt fields); the values land in excerptData -->
-    <tag name="sulu_content.content_excerpt_form" instanceOf="Sulu\Page\Domain\Model\PageDimensionContentInterface" priority="50"/>
+    <tag name="sulu_content.content_excerpt_form" instanceOf="Sulu\Page\Domain\Model\PageDimensionContentInterface" priority="10"/>
 
     <properties>
         <section name="sulu_pdf">
