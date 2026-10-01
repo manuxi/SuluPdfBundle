@@ -1,0 +1,21 @@
+sulu_pdf:
+    excerpt:
+        section: "PDF"
+        enabled:
+            title: "PDF Download"
+            info: "Offers this page as a PDF."
+        show_captions:
+            title: "Image Captions"
+            info: "Shows the image captions in the PDF."
+        show_modified:
+            title: "Last Modified"
+            info: "Shows the date of the last change at the end."
+        show_online_link:
+            title: "Link to Online Version"
+            info: "Shows a QR code and the link to the page at the end."
+        company_data:
+            title: "Company Data"
+            info: "Adds the company data of the organisation."
+            none: "Do not show"
+            footer: "On every page (footer)"
+            end: "At the end of the PDF"

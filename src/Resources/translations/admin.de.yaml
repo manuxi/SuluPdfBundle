@@ -1,0 +1,21 @@
+sulu_pdf:
+    excerpt:
+        section: "PDF"
+        enabled:
+            title: "PDF-Download"
+            info: "Bietet diese Seite als PDF an."
+        show_captions:
+            title: "Bildunterschriften"
+            info: "Zeigt die Bildunterschriften im PDF."
+        show_modified:
+            title: "Zuletzt geändert"
+            info: "Zeigt das Datum der letzten Änderung am Ende."
+        show_online_link:
+            title: "Link zur Online-Version"
+            info: "Zeigt QR-Code und Link zur Seite am Ende."
+        company_data:
+            title: "Firmendaten"
+            info: "Fügt die Firmendaten der Organisation ein."
+            none: "Nicht anzeigen"
+            footer: "Auf jeder Seite (Fußzeile)"
+            end: "Am Ende des PDFs"

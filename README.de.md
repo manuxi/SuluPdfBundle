@@ -66,6 +66,8 @@ sulu_pdf:
         italic: 'assets/fonts/open-sans-italic.ttf'
         bold: 'assets/fonts/open-sans-700.ttf'
         bold_italic: 'assets/fonts/open-sans-700italic.ttf'
+    excerpt:
+        pages: true                             # PDF-Schalter im Reiter Auszug der Seiten
     company_data_provider: App\Pdf\CompanyDataProvider
     profiles:
         offers:
@@ -95,9 +97,25 @@ Ein Profil sagt für eine Art von Inhalt, ob es ein PDF gibt, mit welchen Option
 
 Mit [manuxi/sulu-article-configuration-bundle](https://github.com/manuxi/SuluArticleConfigurationBundle) (1.4+) wird das Profil `articles` automatisch registriert. Es liest die Schalter des Artikels selbst (Tab "Konfiguration": PDF-Download, Bildunterschriften, Autorenkasten, Datum der letzten Änderung, Link/QR-Code, Firmendaten). Die Standard-Regeln passen zu den Artikel-Templates des Referenz-Themes dieses Bundles (`.article-main`, `.article-header`, ...), andere Themes überschreiben sie wie oben gezeigt.
 
-### Seiten (automatisch)
+### Seiten (Schalter im Reiter Auszug)
 
-Mit [manuxi/sulu-page-configuration-bundle](https://github.com/manuxi/SuluPageConfigurationBundle) wird das Profil `pages` automatisch registriert. Jede Seite bekommt eigene Schalter im Abschnitt PDF des Tabs "Konfiguration" (Download an/aus, Bildunterschriften, Datum der letzten Änderung, Link/QR-Code, Firmendaten). Ohne dieses Bundle legen Sie in der Konfiguration ein Profil mit `resource_key: pages` an - dann hat jede Seite ein PDF.
+```yaml
+sulu_pdf:
+    excerpt:
+        pages: true
+```
+
+fügt dem **Reiter "Auszug" jeder Seite einen Abschnitt PDF** hinzu (Download an/aus, Bildunterschriften, Datum der letzten Änderung, Link/QR-Code, Firmendaten) und registriert das Profil `pages`, das diese Werte liest. Die Schalter nutzen Sulus eigenen Haken für zusätzliche Auszug-Felder (`sulu_content.content_excerpt_form`) und werden deshalb im `excerptData` der Seite gespeichert: **pro Sprache und mit Entwurf/Veröffentlichen** wie jeder andere Seiteninhalt. Nur die veröffentlichte Version entscheidet, ob es den Download gibt. Seiten haben keinen Autorenkasten.
+
+Ohne `excerpt.pages` legen Sie in der Konfiguration ein Profil mit `resource_key: pages` an - dann hat jede Seite ein PDF.
+
+Den Link nur dort zeigen, wo ein PDF existiert:
+
+```twig
+{% if sulu_pdf_available('pages', uuid, app.request.locale) %}
+    <a href="{{ sulu_pdf_url('pages', uuid, app.request.locale) }}">Als PDF herunterladen</a>
+{% endif %}
+```
 
 ### Events (automatisch)
 

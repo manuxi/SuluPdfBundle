@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace Manuxi\SuluPdfBundle\DependencyInjection;
 
 use Manuxi\SuluArticleConfigurationBundle\Service\ArticleConfigurationResolver;
-use Manuxi\SuluPageConfigurationBundle\Repository\PageConfigurationRepository;
 use Manuxi\SuluPdfBundle\Model\PdfOptions;
 use Manuxi\SuluPdfBundle\Model\PdfRules;
 use Manuxi\SuluPdfBundle\Profile\ArticleProfile;
 use Manuxi\SuluPdfBundle\Profile\ConfigProfile;
 use Manuxi\SuluPdfBundle\Profile\EventProfile;
-use Manuxi\SuluPdfBundle\Profile\PageProfile;
+use Manuxi\SuluPdfBundle\Profile\PageExcerptProfile;
 use Manuxi\SuluPdfBundle\Service\CompanyDataProviderInterface;
 use Manuxi\SuluPdfBundle\Service\NullCompanyDataProvider;
 use Symfony\Component\Config\FileLocator;
@@ -29,6 +28,28 @@ class SuluPdfExtension extends Extension implements PrependExtensionInterface
         $container->prependExtensionConfig('framework', [
             'translator' => ['paths' => [__DIR__ . '/../Resources/translations/']],
         ]);
+
+        // sulu_pdf.excerpt.pages: the PDF switches join the excerpt tab of pages (admin form of this bundle)
+        if ($container->hasExtension('sulu_admin') && $this->excerptPagesEnabled($container->getExtensionConfig('sulu_pdf'))) {
+            $container->prependExtensionConfig('sulu_admin', [
+                'forms' => ['directories' => [__DIR__ . '/../Resources/config/forms/pages']],
+            ]);
+        }
+    }
+
+    /**
+     * @param list<array<string, mixed>> $configs the raw (unprocessed) config of this bundle
+     */
+    private function excerptPagesEnabled(array $configs): bool
+    {
+        $enabled = false;
+        foreach ($configs as $config) {
+            if (isset($config['excerpt']['pages'])) {
+                $enabled = (bool) $config['excerpt']['pages'];
+            }
+        }
+
+        return $enabled;
     }
 
     public function load(array $configs, ContainerBuilder $container): void
@@ -94,10 +115,10 @@ class SuluPdfExtension extends Extension implements PrependExtensionInterface
             $registered['articles'] = true;
         }
 
-        // pages: per-page switches of the page configuration bundle
-        if (\class_exists(PageConfigurationRepository::class) && isset($bundles['SuluPageConfigurationBundle'])) {
-            $container->setDefinition(PageProfile::class, (new Definition(PageProfile::class))
-                ->setArguments([new Reference(PageConfigurationRepository::class), $connection])
+        // pages: per-page switches in the excerpt tab (sulu_pdf.excerpt.pages)
+        if ($config['excerpt']['pages']) {
+            $container->setDefinition(PageExcerptProfile::class, (new Definition(PageExcerptProfile::class))
+                ->setArguments([$connection])
                 ->addTag('sulu_pdf.profile'));
             $registered['pages'] = true;
         }
