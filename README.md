@@ -66,8 +66,10 @@ sulu_pdf:
         italic: 'assets/fonts/open-sans-italic.ttf'
         bold: 'assets/fonts/open-sans-700.ttf'
         bold_italic: 'assets/fonts/open-sans-700italic.ttf'
-    excerpt:
-        pages: true                             # PDF switches in the excerpt tab of pages
+    excerpt:                                    # PDF switches in the excerpt tab
+        pages: true
+        articles: true
+        events: true
     company_data_provider: App\Pdf\CompanyDataProvider
     profiles:
         offers:
@@ -97,29 +99,29 @@ A profile says for one kind of content whether a PDF exists, with which options,
 
 With [manuxi/sulu-article-configuration-bundle](https://github.com/manuxi/SuluArticleConfigurationBundle) (1.4+) the profile `articles` is registered automatically. It reads the article's own switches (tab "Configuration": PDF download, image captions, author box, last-modified date, link/QR code, company data). Its default rules match the article templates of that bundle's reference theme (`.article-main`, `.article-header`, ...), other themes override them as shown above.
 
-### Pages (switch in the excerpt tab)
+### Switch in the excerpt tab (pages, articles, events)
 
 ```yaml
 sulu_pdf:
     excerpt:
         pages: true
+        articles: true
+        events: true
 ```
 
-adds a **PDF section to the excerpt tab of every page** (download on/off, image captions, last-modified date, link/QR code, company data) and registers the profile `pages`, which reads these values. The switches use Sulu's own hook for extra excerpt fields (`sulu_content.content_excerpt_form`), so they are saved in the page's `excerptData`: **per language, and with the draft/publish workflow** like any other page content. Only the published version decides whether the download exists. Pages have no author box.
+adds a **PDF section to the excerpt tab** of that content, as its last section (download on/off, image captions, last-modified date, link/QR code, company data; articles also have the author box), and registers the profile (`pages`, `articles`, `events`) that reads these values. The switches use Sulu's own hook for extra excerpt fields (`sulu_content.content_excerpt_form`), so they are saved in the content's excerpt data: **per language, and with the draft/publish workflow** like any other content. Only the published version decides whether the download exists.
 
-Without `excerpt.pages` define a profile with `resource_key: pages` in the config - then every page has a PDF.
+- **Pages** have no author box. Without `excerpt.pages` define a profile with `resource_key: pages` in the config - then every page has a PDF.
+- **Articles:** with `excerpt.articles` the excerpt switches replace the PDF switches of the article configuration bundle (its profile is then not registered). Without it that bundle's tab "Configuration" decides (see above).
+- **Events:** with `excerpt.events` the excerpt switches decide per event; without it on/off and the options come from `sulu_pdf.profiles.events` for all events. Date and venue are printed as header lines from the event's own data (not scraped from the page), the event's last change is used for "last modified".
 
-To show the link only where a PDF exists:
+To show a link only where a PDF exists:
 
 ```twig
 {% if sulu_pdf_available('pages', uuid, app.request.locale) %}
     <a href="{{ sulu_pdf_url('pages', uuid, app.request.locale) }}">Download as PDF</a>
 {% endif %}
 ```
-
-### Events (automatic)
-
-With [manuxi/sulu-event-bundle](https://github.com/manuxi/SuluEventBundle) the profile `events` is registered automatically. Date and venue are printed as header lines from the event's own data (not scraped from the page), and the event's last change is used for "last modified". An event has no switches of its own: on/off (`enabled`) and the options come from `sulu_pdf.profiles.events`.
 
 ### Profiles from config
 

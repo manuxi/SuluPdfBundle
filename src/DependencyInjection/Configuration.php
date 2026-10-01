@@ -45,6 +45,8 @@ final class Configuration implements ConfigurationInterface
                     ->info('Per-resource PDF switches in the excerpt tab (values live in excerptData: per language, with draft/publish).')
                     ->children()
                         ->booleanNode('pages')->defaultFalse()->info('Adds a PDF section to the excerpt tab of pages and makes the profile "pages" read it.')->end()
+                        ->booleanNode('articles')->defaultFalse()->info('Same for articles (instead of the switches of the article configuration bundle).')->end()
+                        ->booleanNode('events')->defaultFalse()->info('Same for events (needs the event bundle).')->end()
                     ->end()
                 ->end()
                 ->scalarNode('company_data_provider')

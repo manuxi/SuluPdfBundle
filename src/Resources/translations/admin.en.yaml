@@ -3,16 +3,19 @@ sulu_pdf:
         section: "PDF"
         enabled:
             title: "PDF Download"
-            info: "Offers this page as a PDF."
+            info: "Offers this content as a PDF."
         show_captions:
             title: "Image Captions"
             info: "Shows the image captions in the PDF."
+        show_author:
+            title: "Author Box"
+            info: "Shows the box with author and short bio at the end."
         show_modified:
             title: "Last Modified"
             info: "Shows the date of the last change at the end."
         show_online_link:
             title: "Link to Online Version"
-            info: "Shows a QR code and the link to the page at the end."
+            info: "Shows a QR code and the link to the content at the end."
         company_data:
             title: "Company Data"
             info: "Adds the company data of the organisation."

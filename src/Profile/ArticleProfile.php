@@ -36,6 +36,12 @@ final class ArticleProfile implements PdfProfileInterface
 
     public function getDefaultRules(): PdfRules
     {
+        return self::themeRules();
+    }
+
+    /** the rules for the article templates of the reference theme, also used by the excerpt-switched article profile */
+    public static function themeRules(): PdfRules
+    {
         return new PdfRules(
             root: 'article.article',
             title: 'h1',

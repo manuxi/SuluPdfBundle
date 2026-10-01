@@ -3,16 +3,19 @@ sulu_pdf:
         section: "PDF"
         enabled:
             title: "PDF-Download"
-            info: "Bietet diese Seite als PDF an."
+            info: "Bietet diesen Inhalt als PDF an."
         show_captions:
             title: "Bildunterschriften"
             info: "Zeigt die Bildunterschriften im PDF."
+        show_author:
+            title: "Autorenkasten"
+            info: "Zeigt den Kasten mit Autor und Kurzvita am Ende."
         show_modified:
             title: "Zuletzt geändert"
             info: "Zeigt das Datum der letzten Änderung am Ende."
         show_online_link:
             title: "Link zur Online-Version"
-            info: "Zeigt QR-Code und Link zur Seite am Ende."
+            info: "Zeigt QR-Code und Link zum Inhalt am Ende."
         company_data:
             title: "Firmendaten"
             info: "Fügt die Firmendaten der Organisation ein."

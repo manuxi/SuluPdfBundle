@@ -66,8 +66,10 @@ sulu_pdf:
         italic: 'assets/fonts/open-sans-italic.ttf'
         bold: 'assets/fonts/open-sans-700.ttf'
         bold_italic: 'assets/fonts/open-sans-700italic.ttf'
-    excerpt:
-        pages: true                             # PDF-Schalter im Reiter Auszug der Seiten
+    excerpt:                                    # PDF-Schalter im Reiter Auszug
+        pages: true
+        articles: true
+        events: true
     company_data_provider: App\Pdf\CompanyDataProvider
     profiles:
         offers:
@@ -97,17 +99,21 @@ Ein Profil sagt für eine Art von Inhalt, ob es ein PDF gibt, mit welchen Option
 
 Mit [manuxi/sulu-article-configuration-bundle](https://github.com/manuxi/SuluArticleConfigurationBundle) (1.4+) wird das Profil `articles` automatisch registriert. Es liest die Schalter des Artikels selbst (Tab "Konfiguration": PDF-Download, Bildunterschriften, Autorenkasten, Datum der letzten Änderung, Link/QR-Code, Firmendaten). Die Standard-Regeln passen zu den Artikel-Templates des Referenz-Themes dieses Bundles (`.article-main`, `.article-header`, ...), andere Themes überschreiben sie wie oben gezeigt.
 
-### Seiten (Schalter im Reiter Auszug)
+### Schalter im Reiter Auszug (Seiten, Artikel, Events)
 
 ```yaml
 sulu_pdf:
     excerpt:
         pages: true
+        articles: true
+        events: true
 ```
 
-fügt dem **Reiter "Auszug" jeder Seite einen Abschnitt PDF** hinzu (Download an/aus, Bildunterschriften, Datum der letzten Änderung, Link/QR-Code, Firmendaten) und registriert das Profil `pages`, das diese Werte liest. Die Schalter nutzen Sulus eigenen Haken für zusätzliche Auszug-Felder (`sulu_content.content_excerpt_form`) und werden deshalb im `excerptData` der Seite gespeichert: **pro Sprache und mit Entwurf/Veröffentlichen** wie jeder andere Seiteninhalt. Nur die veröffentlichte Version entscheidet, ob es den Download gibt. Seiten haben keinen Autorenkasten.
+fügt dem **Reiter "Auszug"** des jeweiligen Inhalts als letzten Abschnitt einen **Abschnitt PDF** hinzu (Download an/aus, Bildunterschriften, Datum der letzten Änderung, Link/QR-Code, Firmendaten; bei Artikeln zusätzlich der Autorenkasten) und registriert das Profil (`pages`, `articles`, `events`), das diese Werte liest. Die Schalter nutzen Sulus eigenen Haken für zusätzliche Auszug-Felder (`sulu_content.content_excerpt_form`) und werden deshalb in den Auszug-Daten des Inhalts gespeichert: **pro Sprache und mit Entwurf/Veröffentlichen** wie jeder andere Inhalt. Nur die veröffentlichte Version entscheidet, ob es den Download gibt.
 
-Ohne `excerpt.pages` legen Sie in der Konfiguration ein Profil mit `resource_key: pages` an - dann hat jede Seite ein PDF.
+- **Seiten** haben keinen Autorenkasten. Ohne `excerpt.pages` legen Sie in der Konfiguration ein Profil mit `resource_key: pages` an - dann hat jede Seite ein PDF.
+- **Artikel:** Mit `excerpt.articles` ersetzen die Auszug-Schalter die PDF-Schalter des Article-Configuration-Bundles (dessen Profil wird dann nicht registriert). Ohne entscheidet der Tab "Konfiguration" dieses Bundles (siehe oben).
+- **Events:** Mit `excerpt.events` entscheiden die Auszug-Schalter pro Event; ohne kommen An/Aus und Optionen für alle Events aus `sulu_pdf.profiles.events`. Datum und Veranstaltungsort werden als Kopfzeilen aus den eigenen Daten des Events gedruckt (nicht von der Seite gelesen), die letzte Änderung des Events dient als "Zuletzt geändert".
 
 Den Link nur dort zeigen, wo ein PDF existiert:
 
@@ -116,10 +122,6 @@ Den Link nur dort zeigen, wo ein PDF existiert:
     <a href="{{ sulu_pdf_url('pages', uuid, app.request.locale) }}">Als PDF herunterladen</a>
 {% endif %}
 ```
-
-### Events (automatisch)
-
-Mit [manuxi/sulu-event-bundle](https://github.com/manuxi/SuluEventBundle) wird das Profil `events` automatisch registriert. Datum und Veranstaltungsort werden als Kopfzeilen aus den eigenen Daten des Events gedruckt (nicht von der Seite gelesen), die letzte Änderung des Events dient als "Zuletzt geändert". Ein Event hat keine eigenen Schalter: An/Aus (`enabled`) und die Optionen kommen aus `sulu_pdf.profiles.events`.
 
 ### Profile aus der Konfiguration
 

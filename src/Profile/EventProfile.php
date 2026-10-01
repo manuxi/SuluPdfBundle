@@ -9,9 +9,10 @@ use Manuxi\SuluPdfBundle\Model\PdfOptions;
 use Manuxi\SuluPdfBundle\Model\PdfRules;
 
 /**
- * Events of manuxi/sulu-event-bundle. Registered automatically when that bundle is installed; the options and the
- * on/off switch come from sulu_pdf.profiles.events (an event has no switches of its own). Date and venue are printed
- * as header lines from the event's own data (PdfMetaProviderInterface).
+ * Events of manuxi/sulu-event-bundle. Registered automatically when that bundle is installed. With
+ * sulu_pdf.excerpt.events an event is switched in the PDF section of its excerpt tab (per language, draft/publish);
+ * without it the on/off switch and the options come from sulu_pdf.profiles.events for all events. Date and venue are
+ * printed as header lines from the event's own data (PdfMetaProviderInterface).
  */
 final class EventProfile implements PdfProfileInterface, PdfMetaProviderInterface
 {
@@ -19,6 +20,7 @@ final class EventProfile implements PdfProfileInterface, PdfMetaProviderInterfac
         private readonly Connection $connection,
         private readonly PdfOptions $options,
         private readonly bool $enabled = true,
+        private readonly ?ExcerptReader $excerpt = null,
     ) {
     }
 
@@ -39,6 +41,10 @@ final class EventProfile implements PdfProfileInterface, PdfMetaProviderInterfac
 
     public function getOptions(string $id, string $locale): ?PdfOptions
     {
+        if ($this->excerpt) {
+            return ExcerptProfile::optionsFromExcerpt($this->excerpt->read($id, $locale));
+        }
+
         return $this->enabled ? $this->options : null;
     }
 

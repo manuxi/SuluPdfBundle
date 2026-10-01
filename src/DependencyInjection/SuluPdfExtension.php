@@ -10,7 +10,8 @@ use Manuxi\SuluPdfBundle\Model\PdfRules;
 use Manuxi\SuluPdfBundle\Profile\ArticleProfile;
 use Manuxi\SuluPdfBundle\Profile\ConfigProfile;
 use Manuxi\SuluPdfBundle\Profile\EventProfile;
-use Manuxi\SuluPdfBundle\Profile\PageExcerptProfile;
+use Manuxi\SuluPdfBundle\Profile\ExcerptProfile;
+use Manuxi\SuluPdfBundle\Profile\ExcerptReader;
 use Manuxi\SuluPdfBundle\Service\CompanyDataProviderInterface;
 use Manuxi\SuluPdfBundle\Service\NullCompanyDataProvider;
 use Symfony\Component\Config\FileLocator;
@@ -23,29 +24,42 @@ use Symfony\Component\DependencyInjection\Reference;
 
 class SuluPdfExtension extends Extension implements PrependExtensionInterface
 {
+    /**
+     * Where the excerpt data of each kind of content lives: table, uuid column, excerpt column, modified column, changed column.
+     */
+    private const EXCERPT_TABLES = [
+        'pages' => ['pa_page_dimension_contents', 'pageUuid', 'excerptData', 'lastModified', 'changed'],
+        'articles' => ['ar_article_dimension_contents', 'articleUuid', 'excerptData', 'lastModified', 'changed'],
+        'events' => ['app_event_dimension_content', 'event_uuid', 'excerpt_data', 'last_modified', 'changed'],
+    ];
+
     public function prepend(ContainerBuilder $container): void
     {
         $container->prependExtensionConfig('framework', [
             'translator' => ['paths' => [__DIR__ . '/../Resources/translations/']],
         ]);
 
-        // sulu_pdf.excerpt.pages: the PDF switches join the excerpt tab of pages (admin form of this bundle)
-        if ($container->hasExtension('sulu_admin') && $this->excerptPagesEnabled($container->getExtensionConfig('sulu_pdf'))) {
-            $container->prependExtensionConfig('sulu_admin', [
-                'forms' => ['directories' => [__DIR__ . '/../Resources/config/forms/pages']],
-            ]);
+        // sulu_pdf.excerpt.<pages|articles|events>: the PDF switches join the excerpt tab of that content (admin form of this bundle)
+        if ($container->hasExtension('sulu_admin')) {
+            foreach (\array_keys(self::EXCERPT_TABLES) as $kind) {
+                if ($this->excerptEnabled($container->getExtensionConfig('sulu_pdf'), $kind)) {
+                    $container->prependExtensionConfig('sulu_admin', [
+                        'forms' => ['directories' => [__DIR__ . '/../Resources/config/forms/' . $kind]],
+                    ]);
+                }
+            }
         }
     }
 
     /**
      * @param list<array<string, mixed>> $configs the raw (unprocessed) config of this bundle
      */
-    private function excerptPagesEnabled(array $configs): bool
+    private function excerptEnabled(array $configs, string $kind): bool
     {
         $enabled = false;
         foreach ($configs as $config) {
-            if (isset($config['excerpt']['pages'])) {
-                $enabled = (bool) $config['excerpt']['pages'];
+            if (isset($config['excerpt'][$kind])) {
+                $enabled = (bool) $config['excerpt'][$kind];
             }
         }
 
@@ -107,8 +121,22 @@ class SuluPdfExtension extends Extension implements PrependExtensionInterface
         $connection = new Reference('doctrine.dbal.default_connection');
         $registered = [];
 
-        // articles: per-article switches of the article configuration bundle
-        if (\class_exists(ArticleConfigurationResolver::class) && isset($bundles['SuluArticleConfigurationBundle'])) {
+        // readers of the excerpt switches, one per kind of content that has them (sulu_pdf.excerpt.*)
+        $readers = [];
+        foreach (self::EXCERPT_TABLES as $kind => $columns) {
+            if ($config['excerpt'][$kind]) {
+                $readers[$kind] = (new Definition(ExcerptReader::class))->setArguments([$connection, ...$columns]);
+            }
+        }
+
+        // articles: the excerpt switches (sulu_pdf.excerpt.articles) or, without them, the per-article switches of the
+        // article configuration bundle
+        if (isset($readers['articles'])) {
+            $container->setDefinition(ExcerptProfile::class . '.articles', (new Definition(ExcerptProfile::class))
+                ->setArguments(['articles', $readers['articles'], (new Definition(PdfRules::class))->setFactory([ArticleProfile::class, 'themeRules']), true])
+                ->addTag('sulu_pdf.profile'));
+            $registered['articles'] = true;
+        } elseif (\class_exists(ArticleConfigurationResolver::class) && isset($bundles['SuluArticleConfigurationBundle'])) {
             $container->setDefinition(ArticleProfile::class, (new Definition(ArticleProfile::class))
                 ->setArguments([new Reference(ArticleConfigurationResolver::class), $connection])
                 ->addTag('sulu_pdf.profile'));
@@ -116,14 +144,15 @@ class SuluPdfExtension extends Extension implements PrependExtensionInterface
         }
 
         // pages: per-page switches in the excerpt tab (sulu_pdf.excerpt.pages)
-        if ($config['excerpt']['pages']) {
-            $container->setDefinition(PageExcerptProfile::class, (new Definition(PageExcerptProfile::class))
-                ->setArguments([$connection])
+        if (isset($readers['pages'])) {
+            $container->setDefinition(ExcerptProfile::class . '.pages', (new Definition(ExcerptProfile::class))
+                ->setArguments(['pages', $readers['pages'], new Definition(PdfRules::class), false])
                 ->addTag('sulu_pdf.profile'));
             $registered['pages'] = true;
         }
 
-        // events: date and venue from the event's data; an event has no switches, so on/off and options come from the config
+        // events: date and venue from the event's data; per-event switches in the excerpt tab (sulu_pdf.excerpt.events),
+        // otherwise on/off and the options come from the config for all events
         if (isset($bundles['SuluEventBundle'])) {
             $events = $config['profiles']['events'] ?? ['options' => [], 'enabled' => true];
             $options = (new Definition(PdfOptions::class))
@@ -131,7 +160,7 @@ class SuluPdfExtension extends Extension implements PrependExtensionInterface
                 ->setArguments([$events['options']]);
 
             $container->setDefinition(EventProfile::class, (new Definition(EventProfile::class))
-                ->setArguments([$connection, $options, $events['enabled']])
+                ->setArguments([$connection, $options, $events['enabled'], $readers['events'] ?? null])
                 ->addTag('sulu_pdf.profile'));
             $registered['events'] = true;
         }
