@@ -74,8 +74,24 @@ final class ContentExtractor
         // a theme without the main selector falls back to <main>, then to the whole body
         $main = $this->first($xpath, $rules->main, $root) ?? $this->first($xpath, 'main') ?? $this->first($xpath, 'body');
 
-        if ($titleNode && $main && $titleNode->parentNode && $this->contains($main, $titleNode)) {
-            $titleNode->parentNode->removeChild($titleNode);
+        // header parts are read first; those that sit inside the main content are taken out of it (the layout prints them)
+        $overline = $rules->overline ? $this->text($xpath, $rules->overline, $root) : '';
+        $subtitle = $rules->subtitle ? $this->text($xpath, $rules->subtitle, $root) : '';
+        $badges = $rules->badges ? $this->texts($xpath, $rules->badges, $root) : [];
+        $meta = $rules->meta ? $this->texts($xpath, $rules->meta, $root) : [];
+
+        if ($main) {
+            $headerNodes = $titleNode ? [$titleNode] : [];
+            foreach ([$rules->overline, $rules->subtitle, $rules->badges, $rules->meta] as $selector) {
+                if ($selector) {
+                    \array_push($headerNodes, ...$this->all($xpath, $selector, $root));
+                }
+            }
+            foreach ($headerNodes as $node) {
+                if ($node->parentNode && $this->contains($main, $node)) {
+                    $node->parentNode->removeChild($node);
+                }
+            }
         }
 
         $body = '';
@@ -100,10 +116,10 @@ final class ContentExtractor
 
         return new PdfDocument(
             title: $title ?: $this->text($xpath, 'title'),
-            overline: $rules->overline ? $this->text($xpath, $rules->overline, $root) : '',
-            subtitle: $rules->subtitle ? $this->text($xpath, $rules->subtitle, $root) : '',
-            badges: $rules->badges ? $this->texts($xpath, $rules->badges, $root) : [],
-            meta: $rules->meta ? $this->texts($xpath, $rules->meta, $root) : [],
+            overline: $overline,
+            subtitle: $subtitle,
+            badges: $badges,
+            meta: $meta,
             lead: $lead,
             heroSrc: $heroSrc,
             heroCaption: $heroCaption,

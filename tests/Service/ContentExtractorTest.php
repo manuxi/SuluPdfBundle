@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Manuxi\SuluPdfBundle\Tests\Service;
 
+use Manuxi\SuluPdfBundle\Model\PdfDocument;
 use Manuxi\SuluPdfBundle\Model\PdfOptions;
 use Manuxi\SuluPdfBundle\Model\PdfRules;
 use Manuxi\SuluPdfBundle\Service\ContentExtractor;
@@ -158,5 +159,25 @@ class ContentExtractorTest extends TestCase
     {
         $this->assertStringContainsString('Written by Jane', $this->extract()->body);
         $this->assertStringNotContainsString('Written by Jane', $this->extract(new PdfOptions(showAuthor: false))->body);
+    }
+
+    public function testHeaderPartsInsideTheMainContentAreMovedToTheHeader(): void
+    {
+        $html = '<html><body><main><h1>Event</h1><h3 class="when">12 November</h3><h3 class="where">Hall</h3><p>Text</p></main></body></html>';
+
+        $doc = (new ContentExtractor())->extract($html, 'https://example.org', new PdfRules(meta: '.when, .where'), new PdfOptions());
+
+        $this->assertSame('Event', $doc->title);
+        $this->assertSame(['12 November', 'Hall'], $doc->meta);
+        $this->assertStringNotContainsString('12 November', $doc->body);
+        $this->assertStringNotContainsString('Event', $doc->body);
+        $this->assertStringContainsString('<p>Text</p>', $doc->body);
+    }
+
+    public function testMetaFromAProfileComesFirst(): void
+    {
+        $doc = (new PdfDocument('T', meta: ['b']))->withMeta(['a', 'b']);
+
+        $this->assertSame(['a', 'b'], $doc->meta);
     }
 }

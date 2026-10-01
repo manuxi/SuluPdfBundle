@@ -13,6 +13,7 @@ use Dompdf\Options;
 use Manuxi\SuluPdfBundle\Model\PdfDocument;
 use Manuxi\SuluPdfBundle\Model\PdfOptions;
 use Manuxi\SuluPdfBundle\Model\PdfResult;
+use Manuxi\SuluPdfBundle\Profile\PdfMetaProviderInterface;
 use Manuxi\SuluPdfBundle\Profile\ProfileRegistry;
 use Sulu\Route\Domain\Repository\RouteRepositoryInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -97,6 +98,9 @@ final class PdfRenderer
         $isLocal = $this->isLocalHost($request->getHost());
         [$heroWidth, $heroHeight] = $this->heroSize($document->heroSrc, $isLocal);
         $document = $document->withHeroSize($heroWidth, $heroHeight);
+        if ($profile instanceof PdfMetaProviderInterface) {
+            $document = $document->withMeta([...$profile->getMeta($id, $locale), ...$document->meta]);
+        }
 
         $dateFormat = new \IntlDateFormatter($locale, \IntlDateFormatter::LONG, \IntlDateFormatter::NONE);
         $printed = $dateFormat->format(new \DateTimeImmutable());

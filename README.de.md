@@ -1,4 +1,9 @@
 # SuluPdfBundle
+![php workflow](https://github.com/manuxi/SuluPdfBundle/actions/workflows/php.yml/badge.svg)
+![symfony workflow](https://github.com/manuxi/SuluPdfBundle/actions/workflows/symfony.yml/badge.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/manuxi/SuluPdfBundle/blob/main/LICENSE)
+![GitHub Tag](https://img.shields.io/github/v/tag/manuxi/SuluPdfBundle)
+![Supports Sulu 3.0 or later](https://img.shields.io/badge/%20Sulu->=3.0-0088cc?color=00b2df)
 
 [🇬🇧 English version](README.md)
 
@@ -63,13 +68,19 @@ sulu_pdf:
         bold_italic: 'assets/fonts/open-sans-700italic.ttf'
     company_data_provider: App\Pdf\CompanyDataProvider
     profiles:
-        events:
-            resource_key: events                # ein eigenes Profil
+        offers:
+            resource_key: offers                # ein eigenes Profil
             rules:
                 main: 'main > .container'
             options:
                 company_data: end               # none | footer | end
-        articles:                               # überschreibt nur Regeln des mitgelieferten Profils
+        events:                                 # mitgeliefertes Profil (Event-Bundle installiert): Regeln und Optionen werden hier angepasst
+            rules:
+                hero: '.event .card > img'
+                remove: ['.event .location']
+            options:
+                company_data: end
+        articles:
             rules:
                 main: '.post-body'
 ```
@@ -83,6 +94,14 @@ Ein Profil sagt für eine Art von Inhalt, ob es ein PDF gibt, mit welchen Option
 ### Artikel (automatisch)
 
 Mit [manuxi/sulu-article-configuration-bundle](https://github.com/manuxi/SuluArticleConfigurationBundle) (1.4+) wird das Profil `articles` automatisch registriert. Es liest die Schalter des Artikels selbst (Tab "Konfiguration": PDF-Download, Bildunterschriften, Autorenkasten, Datum der letzten Änderung, Link/QR-Code, Firmendaten). Die Standard-Regeln passen zu den Artikel-Templates des Referenz-Themes dieses Bundles (`.article-main`, `.article-header`, ...), andere Themes überschreiben sie wie oben gezeigt.
+
+### Seiten (automatisch)
+
+Mit [manuxi/sulu-page-configuration-bundle](https://github.com/manuxi/SuluPageConfigurationBundle) wird das Profil `pages` automatisch registriert. Jede Seite bekommt eigene Schalter im Abschnitt PDF des Tabs "Konfiguration" (Download an/aus, Bildunterschriften, Datum der letzten Änderung, Link/QR-Code, Firmendaten). Ohne dieses Bundle legen Sie in der Konfiguration ein Profil mit `resource_key: pages` an - dann hat jede Seite ein PDF.
+
+### Events (automatisch)
+
+Mit [manuxi/sulu-event-bundle](https://github.com/manuxi/SuluEventBundle) wird das Profil `events` automatisch registriert. Datum und Veranstaltungsort werden als Kopfzeilen aus den eigenen Daten des Events gedruckt (nicht von der Seite gelesen), die letzte Änderung des Events dient als "Zuletzt geändert". Ein Event hat keine eigenen Schalter: An/Aus (`enabled`) und die Optionen kommen aus `sulu_pdf.profiles.events`.
 
 ### Profile aus der Konfiguration
 
@@ -103,6 +122,8 @@ final class ProductProfile implements PdfProfileInterface
 }
 ```
 
+Ein Profil kann zusätzlich `Manuxi\SuluPdfBundle\Profile\PdfMetaProviderInterface` (`getMeta(string $id, string $locale): array`) implementieren, um Kopfzeilen aus den eigenen Daten des Inhalts zu drucken, etwa ein Datum oder einen Ort. Sie stehen vor den Einträgen, die die Regel `meta` findet.
+
 ### Regeln
 
 CSS-Selektoren; Regeln für einzelne Teile werden innerhalb von `root` gesucht, der erste Treffer gilt.
@@ -111,8 +132,8 @@ CSS-Selektoren; Regeln für einzelne Teile werden innerhalb von `root` gesucht, 
 |---|---|---|
 | `root` | `body` | Container mit den Kopfdaten |
 | `title` | `h1` | Titel (wird auch aus dem Inhalt entfernt, das Layout druckt ihn) |
-| `overline`, `subtitle`, `lead` | - | optionale Kopftexte (`lead` wird aus dem Inhalt entfernt) |
-| `badges`, `meta` | - | jeder Treffer wird ein Badge / ein Meta-Eintrag |
+| `overline`, `subtitle`, `lead` | - | optionale Kopftexte (werden aus dem Inhalt entfernt, wenn sie darin stehen) |
+| `badges`, `meta` | - | jeder Treffer wird ein Badge / ein Meta-Eintrag (werden aus dem Inhalt entfernt, wenn sie darin stehen) |
 | `hero` | - | Container des Hero-Bildes (einmal oben gedruckt) |
 | `main` | `main` | der Inhalt; Ersatz ist `<main>`, dann `<body>` |
 | `gallery` | - | Container einer Galerie: die Bilder stehen in zwei Spalten |

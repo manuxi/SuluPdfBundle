@@ -29,6 +29,17 @@ final class PdfDocument
     ) {
     }
 
+    /**
+     * @param list<string> $meta
+     */
+    public function withMeta(array $meta): self
+    {
+        return new self(
+            $this->title, $this->overline, $this->subtitle, $this->badges, $meta, $this->lead,
+            $this->heroSrc, $this->heroCaption, $this->body, $this->heroWidth, $this->heroHeight,
+        );
+    }
+
     /** the hero image fitted into a box (points), set by the renderer once it knows the image's size */
     public function withHeroSize(?float $width, ?float $height): self
     {

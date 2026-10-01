@@ -1,4 +1,9 @@
 # SuluPdfBundle
+![php workflow](https://github.com/manuxi/SuluPdfBundle/actions/workflows/php.yml/badge.svg)
+![symfony workflow](https://github.com/manuxi/SuluPdfBundle/actions/workflows/symfony.yml/badge.svg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/manuxi/SuluPdfBundle/blob/main/LICENSE)
+![GitHub Tag](https://img.shields.io/github/v/tag/manuxi/SuluPdfBundle)
+![Supports Sulu 3.0 or later](https://img.shields.io/badge/%20Sulu->=3.0-0088cc?color=00b2df)
 
 [🇩🇪 Deutsche Version](README.de.md)
 
@@ -63,13 +68,19 @@ sulu_pdf:
         bold_italic: 'assets/fonts/open-sans-700italic.ttf'
     company_data_provider: App\Pdf\CompanyDataProvider
     profiles:
-        events:
-            resource_key: events                # a profile of its own
+        offers:
+            resource_key: offers                # a profile of its own
             rules:
                 main: 'main > .container'
             options:
                 company_data: end               # none | footer | end
-        articles:                               # only overrides rules of the bundled profile
+        events:                                 # a bundled profile (event bundle installed): rules and options are tuned here
+            rules:
+                hero: '.event .card > img'
+                remove: ['.event .location']
+            options:
+                company_data: end
+        articles:
             rules:
                 main: '.post-body'
 ```
@@ -83,6 +94,14 @@ A profile says for one kind of content whether a PDF exists, with which options,
 ### Articles (automatic)
 
 With [manuxi/sulu-article-configuration-bundle](https://github.com/manuxi/SuluArticleConfigurationBundle) (1.4+) the profile `articles` is registered automatically. It reads the article's own switches (tab "Configuration": PDF download, image captions, author box, last-modified date, link/QR code, company data). Its default rules match the article templates of that bundle's reference theme (`.article-main`, `.article-header`, ...), other themes override them as shown above.
+
+### Pages (automatic)
+
+With [manuxi/sulu-page-configuration-bundle](https://github.com/manuxi/SuluPageConfigurationBundle) the profile `pages` is registered automatically. Every page gets its own switches in the PDF section of the "Configuration" tab (download on/off, captions, last-modified date, link/QR code, company data). Without that bundle define a profile with `resource_key: pages` in the config - then all pages have a PDF.
+
+### Events (automatic)
+
+With [manuxi/sulu-event-bundle](https://github.com/manuxi/SuluEventBundle) the profile `events` is registered automatically. Date and venue are printed as header lines from the event's own data (not scraped from the page), and the event's last change is used for "last modified". An event has no switches of its own: on/off (`enabled`) and the options come from `sulu_pdf.profiles.events`.
 
 ### Profiles from config
 
@@ -103,6 +122,8 @@ final class ProductProfile implements PdfProfileInterface
 }
 ```
 
+A profile can additionally implement `Manuxi\SuluPdfBundle\Profile\PdfMetaProviderInterface` (`getMeta(string $id, string $locale): array`) to print header lines from the content's own data, such as a date or a venue, in front of the entries the `meta` rule finds.
+
 ### Rules
 
 CSS selectors; single-part rules are searched inside `root`, the first match wins.
@@ -111,8 +132,8 @@ CSS selectors; single-part rules are searched inside `root`, the first match win
 |---|---|---|
 | `root` | `body` | container that holds the header data |
 | `title` | `h1` | title (also removed from the content, the layout prints it) |
-| `overline`, `subtitle`, `lead` | - | optional header texts (`lead` is removed from the content) |
-| `badges`, `meta` | - | every match becomes one badge / one meta entry |
+| `overline`, `subtitle`, `lead` | - | optional header texts (removed from the content when found inside it) |
+| `badges`, `meta` | - | every match becomes one badge / one meta entry (removed from the content when found inside it) |
 | `hero` | - | container of the hero image (printed once at the top) |
 | `main` | `main` | the content; falls back to `<main>`, then `<body>` |
 | `gallery` | - | container of a gallery: its pictures are printed in two columns |
