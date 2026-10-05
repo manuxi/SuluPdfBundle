@@ -13,7 +13,7 @@ PDF-Download für Sulu-3-Inhalte. Das Bundle rendert die **öffentliche Seite** 
 
 1. `GET /pdf/{resourceKey}/{id}?locale=de` sucht das Profil zum Resource-Key (`articles`, `events`, `pages`, ...). Kein Profil oder PDF ausgeschaltet: 404.
 2. Die öffentliche Seite wird über einen Sub-Request gerendert.
-3. Die **Regeln** des Profils (CSS-Selektoren) finden Titel, Kopfdaten, Hero-Bild, Lead und Hauptinhalt. Skripte, Formulare, Buttons, Icons und Slider-Bedienelemente entfallen, Lazy-Load-Bilder bekommen ihre echte URL, Figures und Galerien werden als Tabellen neu aufgebaut (dompdf kann Block-Bilder in `figure` nicht zuverlässig setzen).
+3. Die **Regeln** des Profils (CSS-Selektoren) finden Titel, Kopfdaten, Hero-Bild, Lead und Hauptinhalt. Skripte, Formulare, Buttons, Icons und Slider-Bedienelemente entfallen, responsive Bilder (`srcset`, `<picture>`) und Lazy-Load-Bilder bekommen eine echte URL (die größte Stufe bis 1280 px), Figures und Galerien werden als Tabellen neu aufgebaut (dompdf kann Block-Bilder in `figure` nicht zuverlässig setzen).
 4. Der Inhalt wird in `@SuluPdf/document.html.twig` gesetzt und mit [dompdf](https://github.com/dompdf/dompdf) umgewandelt. Logo, Linie und Fußzeile mit Seitenzahl werden auf jeder Seite gezeichnet.
 
 ## Voraussetzungen
@@ -175,7 +175,7 @@ Das Bundle hat keine eigenen Firmendaten. `Manuxi\SuluPdfBundle\Service\CompanyD
 
 - Die Selektoren hängen am Markup Ihres Themes - Regeln pro Projekt setzen.
 - Bilder werden per HTTP geladen; auf lokalen Hosts (`localhost`, `local.*`, `*.test`, `*.local`) ist dafür die Zertifikatsprüfung abgeschaltet.
-- `.webp`-Bilder werden als `.jpg` angefordert (dompdf kann kein WebP; Sulu wählt das Format über die URL-Endung).
+- `.webp`- und `.avif`-Bilder werden als `.jpg` angefordert (dompdf liest weder WebP noch AVIF; Sulu wählt das Format über die URL-Endung). Von einem responsiven Bild wird die größte Stufe bis 1280 px genommen, die `<source>`-Elemente eines `<picture>` entfallen.
 - Das Logo muss PNG oder JPG sein.
 - Schriften werden in `%kernel.cache_dir%/sulu_pdf` registriert, beim ersten Aufruf nach einem Cache-Clear.
 

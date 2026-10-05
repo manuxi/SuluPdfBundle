@@ -12,10 +12,13 @@ use Symfony\Component\CssSelector\CssSelectorConverter;
 /**
  * Reduces the rendered public page of a piece of content to what the PDF prints: header data, hero image, lead and
  * the main content - without scripts, icons, sliders and inline styles (aspect-ratio boxes wreck dompdf's layout),
- * with lazy-loaded images resolved to their real URL, and figures rebuilt as tables (see figuresToTables()).
+ * with responsive and lazy-loaded images resolved to one real URL, and figures rebuilt as tables (see figuresToTables()).
  */
 final class ContentExtractor
 {
+    /** widest step of a responsive image taken into the PDF (px): sharp on paper without blowing up the file */
+    private const MAX_IMAGE_WIDTH = 1280;
+
     private readonly CssSelectorConverter $css;
 
     public function __construct()
@@ -216,33 +219,35 @@ final class ContentExtractor
     }
 
     /**
-     * Lazy images carry a placeholder in src and the real file in data-original / data-srcset, which only a browser-side
-     * lazy loader swaps in - dompdf has no JS, so do it here. data-srcset is preferred when present: its largest
-     * candidate is sharper than the small data-original.
+     * The file of every image for dompdf, which runs no JavaScript and picks nothing:
+     * - responsive images carry their steps in srcset (the <source> elements of a <picture>, for other types or screens,
+     *   are dropped: the <img> inside carries everything dompdf needs),
+     * - lazy images of older templates carry a placeholder in src and the real file in data-original / data-srcset.
+     * Of the steps the largest up to MAX_IMAGE_WIDTH is taken.
      */
     private function resolveImages(\DOMXPath $xpath, string $origin): void
     {
+        // libxml parses HTML 4 and does not know <source> as an empty element: it nests the <img> after it inside, so
+        // that is moved out before the <source> goes
+        foreach (\iterator_to_array($xpath->query('//picture//source'), false) as $source) {
+            while ($source->firstChild) {
+                $source->parentNode?->insertBefore($source->firstChild, $source);
+            }
+            $source->parentNode?->removeChild($source);
+        }
+
         /** @var \DOMElement $img */
         foreach ($xpath->query('//img') as $img) {
-            $real = null;
-
-            if ($img->hasAttribute('data-srcset')) {
-                $best = 0;
-                foreach (\explode(',', $img->getAttribute('data-srcset')) as $candidate) {
-                    if (\preg_match('/^\s*(\S+)\s+(\d+)w\s*$/', $candidate, $c) && (int) $c[2] > $best) {
-                        $best = (int) $c[2];
-                        $real = $c[1];
-                    }
-                }
-            }
+            $real = $this->pickCandidate($img->getAttribute('data-srcset'))
+                ?? $this->pickCandidate($img->getAttribute('srcset'));
             $real ??= $img->getAttribute('data-original') ?: $img->getAttribute('data-src') ?: $img->getAttribute('src');
 
             if (!$real) {
                 continue;
             }
 
-            // the image format is picked by the URL's extension, and dompdf can't read .webp
-            $real = (string) \preg_replace('/\.webp(\?|$)/i', '.jpg$1', $real);
+            // the image format is picked by the URL's extension, and dompdf reads neither WebP nor AVIF
+            $real = (string) \preg_replace('/\.(webp|avif)(\?|$)/i', '.jpg$2', $real);
 
             // dompdf has no page origin to resolve root-relative paths against
             if (\str_starts_with($real, '/') && !\str_starts_with($real, '//')) {
@@ -250,10 +255,38 @@ final class ContentExtractor
             }
 
             $img->setAttribute('src', $real);
-            foreach (['data-original', 'data-srcset', 'data-sizes', 'data-src'] as $attribute) {
+            foreach (['data-original', 'data-srcset', 'data-sizes', 'data-src', 'srcset', 'sizes'] as $attribute) {
                 $img->removeAttribute($attribute);
             }
         }
+    }
+
+    /**
+     * The largest candidate of a srcset ("a.webp 640w, b.webp 1280w") up to MAX_IMAGE_WIDTH; if every one is wider, the
+     * narrowest. Null without candidates.
+     */
+    private function pickCandidate(string $srcset): ?string
+    {
+        $fitting = null;
+        $fittingWidth = 0;
+        $narrowest = null;
+        $narrowestWidth = \PHP_INT_MAX;
+        foreach (\explode(',', $srcset) as $candidate) {
+            if (!\preg_match('/^\s*(\S+)\s+(\d+)w\s*$/', $candidate, $c)) {
+                continue;
+            }
+            $width = (int) $c[2];
+            if ($width <= self::MAX_IMAGE_WIDTH && $width > $fittingWidth) {
+                $fitting = $c[1];
+                $fittingWidth = $width;
+            }
+            if ($width < $narrowestWidth) {
+                $narrowest = $c[1];
+                $narrowestWidth = $width;
+            }
+        }
+
+        return $fitting ?? $narrowest;
     }
 
     /**

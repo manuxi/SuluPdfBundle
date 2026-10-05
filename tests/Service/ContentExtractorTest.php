@@ -95,10 +95,33 @@ class ContentExtractorTest extends TestCase
     {
         $doc = $this->extract();
 
-        // largest srcset candidate, webp -> jpg, root-relative -> absolute
+        // largest srcset candidate up to 1280px, webp -> jpg, root-relative -> absolute
         $this->assertSame('https://example.org/uploads/a/1280x/hero.jpg?v=1', $doc->heroSrc);
         $this->assertSame('Hero caption', $doc->heroCaption);
         $this->assertStringNotContainsString('hero-again', $doc->body);
+    }
+
+    public function testResponsiveImagesTakeTheLargestStepUpToTheLimit(): void
+    {
+        $html = <<<'HTML'
+            <html><body><article class="post"><header><h1>Title</h1></header>
+            <div class="hero"><picture><source type="image/avif" srcset="/u/640x/h.avif?v=1 640w, /u/1280x/h.avif?v=1 1280w"><img src="/u/800x/h.webp?v=1" srcset="/u/640x/h.webp?v=1 640w, /u/1280x/h.webp?v=1 1280w, /u/2000x/h.webp?v=1 2000w" sizes="auto, 100vw" alt="Hero"></picture></div>
+            <div class="post-main">
+                <p><img src="/u/a.avif?v=2" alt="A"></p>
+                <p><img src="/u/1600x/w.webp" srcset="/u/1600x/w.webp 1600w, /u/2000x/w.webp 2000w" alt="W"></p>
+            </div>
+            </article></body></html>
+            HTML;
+        $doc = (new ContentExtractor())->extract($html, 'https://example.org', $this->rules(), new PdfOptions());
+
+        // the <img> of a <picture>: largest step up to 1280px, WebP -> JPEG
+        $this->assertSame('https://example.org/u/1280x/h.jpg?v=1', $doc->heroSrc);
+        // AVIF -> JPEG as well; no <source>, srcset or sizes left for dompdf
+        $this->assertStringContainsString('https://example.org/u/a.jpg?v=2', $doc->body);
+        $this->assertStringNotContainsString('<source', $doc->body);
+        $this->assertStringNotContainsString('srcset', $doc->body);
+        // every step wider than the limit: the narrowest
+        $this->assertStringContainsString('https://example.org/u/1600x/w.jpg', $doc->body);
     }
 
     public function testBodyIsCleaned(): void

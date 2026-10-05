@@ -13,7 +13,7 @@ PDF download for Sulu 3 content. The bundle renders the **public page** of an ar
 
 1. `GET /pdf/{resourceKey}/{id}?locale=de` looks up the profile for the resource key (`articles`, `events`, `pages`, ...). No profile or PDF switched off: 404.
 2. The public page is rendered through a sub-request.
-3. The **rules** of the profile (CSS selectors) pick title, header data, hero image, lead and main content. Scripts, forms, buttons, icons and carousel chrome are dropped, lazy images get their real URL, figures and galleries are rebuilt as tables (dompdf cannot lay out block images inside `figure` reliably).
+3. The **rules** of the profile (CSS selectors) pick title, header data, hero image, lead and main content. Scripts, forms, buttons, icons and carousel chrome are dropped, responsive images (`srcset`, `<picture>`) and lazy images get one real URL (the largest step up to 1280 px), figures and galleries are rebuilt as tables (dompdf cannot lay out block images inside `figure` reliably).
 4. The content is set into `@SuluPdf/document.html.twig` and converted with [dompdf](https://github.com/dompdf/dompdf). Logo, rule and footer with the page count are drawn on every page.
 
 ## Requirements
@@ -175,7 +175,7 @@ Override `@SuluPdf/document.html.twig` with `templates/bundles/SuluPdfBundle/doc
 
 - The selectors depend on your theme's markup - set the rules per project.
 - Images are fetched over HTTP; on local hosts (`localhost`, `local.*`, `*.test`, `*.local`) certificate verification is switched off for that.
-- `.webp` images are requested as `.jpg` (dompdf cannot read WebP; Sulu picks the format by URL extension).
+- `.webp` and `.avif` images are requested as `.jpg` (dompdf reads neither WebP nor AVIF; Sulu picks the format by URL extension). Of a responsive image the largest step up to 1280 px is used, the `<source>` elements of a `<picture>` are dropped.
 - The logo must be PNG or JPG.
 - Fonts are registered in `%kernel.cache_dir%/sulu_pdf` on the first request after a cache clear.
 
