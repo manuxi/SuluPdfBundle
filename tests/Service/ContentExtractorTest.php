@@ -148,6 +148,28 @@ class ContentExtractorTest extends TestCase
         $this->assertStringContainsString('<figure class="quote">', $body);
     }
 
+    public function testGLightboxLinksAreUnwrapped(): void
+    {
+        $html = <<<'HTML'
+            <html><body><article class="post"><header><h1>Title</h1></header>
+            <div class="post-main">
+                <figure><a href="/big1.jpg" data-lightbox data-gallery="g" data-description="One"><img src="/u/1.jpg" alt=""></a><figcaption>One</figcaption></figure>
+                <p><a href="/big2.jpg" class="glightbox"><img src="/u/2.jpg" alt="Two"></a></p>
+                <p><a href="/big3.jpg" data-glightbox="title: Three"><img src="/u/3.jpg" alt="Three"></a></p>
+                <p><a href="https://example.org/more" class="glightbox-like">kept</a></p>
+            </div>
+            </article></body></html>
+            HTML;
+        $body = (new ContentExtractor())->extract($html, 'https://example.org', $this->rules(), new PdfOptions())->body;
+
+        foreach (['big1.jpg', 'big2.jpg', 'big3.jpg', 'data-lightbox', 'data-glightbox'] as $gone) {
+            $this->assertStringNotContainsString($gone, $body, $gone);
+        }
+        foreach (['/u/1.jpg', '/u/2.jpg', '/u/3.jpg', 'https://example.org/more'] as $kept) {
+            $this->assertStringContainsString($kept, $body, $kept);
+        }
+    }
+
     public function testCaptionsCanBeSwitchedOff(): void
     {
         $doc = $this->extract(new PdfOptions(showCaptions: false));

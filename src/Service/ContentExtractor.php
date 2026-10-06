@@ -49,8 +49,11 @@ final class ContentExtractor
 
         $this->resolveImages($xpath, $origin);
 
-        // lightbox links around images: nothing to click in a PDF, and dompdf underlines the linked image's edge
-        foreach ($xpath->query('//a[@*[starts-with(name(), "data-fancybox")]]') as $link) {
+        // lightbox links around images (Fancybox, GLightbox: data-lightbox, data-glightbox or class glightbox): nothing to
+        // click in a PDF, and dompdf underlines the linked image's edge
+        $lightboxLinks = '//a[@*[starts-with(name(), "data-fancybox") or starts-with(name(), "data-lightbox") or name() = "data-glightbox"]'
+            .' or contains(concat(" ", normalize-space(@class), " "), " glightbox ")]';
+        foreach ($xpath->query($lightboxLinks) as $link) {
             while ($link->firstChild) {
                 $link->parentNode->insertBefore($link->firstChild, $link);
             }

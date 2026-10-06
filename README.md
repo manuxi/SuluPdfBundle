@@ -176,6 +176,7 @@ Override `@SuluPdf/document.html.twig` with `templates/bundles/SuluPdfBundle/doc
 - The selectors depend on your theme's markup - set the rules per project.
 - Images are fetched over HTTP; on local hosts (`localhost`, `local.*`, `*.test`, `*.local`) certificate verification is switched off for that.
 - `.webp` and `.avif` images are requested as `.jpg` (dompdf reads neither WebP nor AVIF; Sulu picks the format by URL extension). Of a responsive image the largest step up to 1280 px is used, the `<source>` elements of a `<picture>` are dropped.
+- Lightbox links around images are removed, the image stays: Fancybox (`data-fancybox*`) and GLightbox (`data-lightbox*`, `data-glightbox`, class `glightbox`).
 - The logo must be PNG or JPG.
 - Fonts are registered in `%kernel.cache_dir%/sulu_pdf` on the first request after a cache clear.
 

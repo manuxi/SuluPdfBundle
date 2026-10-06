@@ -176,6 +176,7 @@ Das Bundle hat keine eigenen Firmendaten. `Manuxi\SuluPdfBundle\Service\CompanyD
 - Die Selektoren hängen am Markup Ihres Themes - Regeln pro Projekt setzen.
 - Bilder werden per HTTP geladen; auf lokalen Hosts (`localhost`, `local.*`, `*.test`, `*.local`) ist dafür die Zertifikatsprüfung abgeschaltet.
 - `.webp`- und `.avif`-Bilder werden als `.jpg` angefordert (dompdf liest weder WebP noch AVIF; Sulu wählt das Format über die URL-Endung). Von einem responsiven Bild wird die größte Stufe bis 1280 px genommen, die `<source>`-Elemente eines `<picture>` entfallen.
+- Lightbox-Links um Bilder werden entfernt, das Bild bleibt: Fancybox (`data-fancybox*`) und GLightbox (`data-lightbox*`, `data-glightbox`, Klasse `glightbox`).
 - Das Logo muss PNG oder JPG sein.
 - Schriften werden in `%kernel.cache_dir%/sulu_pdf` registriert, beim ersten Aufruf nach einem Cache-Clear.
 
